@@ -1,0 +1,10 @@
+{"session": "demo", "ts": "2026-11-08T10:00:00+00:00", "role": "user", "content": "start a job"}
+{"session": "demo", "ts": "2026-11-08T10:00:06+00:00", "role": "assistant", "content": "I'll run it"}
+{"session": "demo", "ts": "2026-11-08T10:00:09+00:00", "role": "tool", "content": "job queued"}
+{"session": "demo", "ts": "2026-11-08T10:00:40+00:00", "role": "assistant", "content": "the job is queued"}
+{"session": "demo", "ts": "2026-11-08T10:00:46+00:00", "role": "user", "content": "thanks"}
+{"session": "demo", "ts": "2026-11-08T10:10:00+00:00", "role": "user", "content": "[IMPORTANT: Background process p7 completed"}
+{"session": "demo", "ts": "2026-11-08T10:10:01+00:00", "role": "assistant", "content": "the job finished while we talked"}
+{"session": "demo", "ts": "2026-11-08T10:25:00+00:00", "role": "user", "content": "next question"}
+{"session": "demo", "ts": "2026-11-08T10:25:04+00:00", "role": "tool", "content": "late result written into the session"}
+{"session": "demo", "ts": "2026-11-08T10:25:10+00:00", "role": "assistant", "content": "here is the answer"}
