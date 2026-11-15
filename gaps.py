@@ -115,7 +115,11 @@ def intervals_from(rows, session: str) -> list[Interval]:
     return out
 
 
-def load_sqlite(path: str, table: str, cols: str, days: int) -> dict[str, list]:
+def load_sqlite(path: str, table: str, cols: str, days: int, roles: dict[str, str] | None = None) -> dict[str, list]:
+    """`roles` maps a record's own author labels onto the two the taxonomy speaks: e.g.
+    user=UID:1000,assistant=SOPHIA. Without it a record whose authors are named anything else classifies
+    as 98.8 % UNKNOWN - a clean-looking table that says nothing, which is the failure this tool exists to
+    point at in other people's traces. Measured on my own record, 2026-11-15."""
     session_c, ts_c, role_c, text_c = [c.strip() for c in cols.split(",")]
     cutoff = datetime.now(timezone.utc).timestamp() - days * 86400
     con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
@@ -126,7 +130,10 @@ def load_sqlite(path: str, table: str, cols: str, days: int) -> dict[str, list]:
         )
         sessions: dict[str, list] = {}
         for sid, ts, role, text in con.execute(q, (cutoff,)):
-            sessions.setdefault(str(sid), []).append((float(ts), str(role), text or ""))
+            name = str(role)
+            if roles:
+                name = roles.get(name, name)
+            sessions.setdefault(str(sid), []).append((float(ts), name, text or ""))
     finally:
         con.close()
     return sessions
@@ -164,16 +171,26 @@ def main() -> int:
     ap.add_argument("--days", type=int, default=30)
     ap.add_argument("--out")
     ap.add_argument("--idle-min", type=float, default=600.0)
+    ap.add_argument("--roles", default="",
+                    help="map a record's own author labels onto the taxonomy, e.g. "
+                         "'user=UID:1000,assistant=SOPHIA' (see load_sqlite)")
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args()
 
+    role_map = {}
+    for pair in (x for x in a.roles.split(",") if x.strip()):
+        source, _, target = pair.partition("=")
+        if source.strip() and target.strip():
+            role_map[source.strip()] = target.strip()
+        else:
+            ap.error(f"--roles entry {pair!r} is not source=target")
     if a.selftest:
         return selftest()
     if not a.sqlite and not a.jsonl:
         ap.error("give --sqlite or --jsonl (or --selftest)")
 
     sessions = (
-        load_sqlite(a.sqlite, a.table, a.cols, a.days)
+        load_sqlite(a.sqlite, a.table, a.cols, a.days, role_map)
         if a.sqlite
         else load_jsonl(a.jsonl, a.days)
     )
